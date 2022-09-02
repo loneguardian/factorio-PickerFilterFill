@@ -1,0 +1,9 @@
+{
+    "name": "picker-filter-fill",
+    "version": "0.0.1",
+    "title": "Picker Filter Fill",
+    "author": "Xeraph",
+    "factorio_version": "1.1",
+    "dependencies": ["base >= 1.1", "stdlib >= 1.4.6"],
+    "description": "Picker's Inventory's Filter Fill"
+  }
