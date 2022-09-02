@@ -276,26 +276,45 @@ local function blueprint_requests(event)
 end
 Gui.on_click('filterfill_requests_btn_bp', blueprint_requests)
 
--- local function update_mod_settings(event)
---     local settingName = event.setting
+local settings_value = {}
 
---     if settingName == 'picker-filter-requests' then
---         use_filter_requests = settings['picker-filter-requests'].value
---     elseif settingName == 'picker-filter-filters' then
---         use_filter_filters = settings['picker-filter-filters'].value
---     end
--- end
+local function get_settings_value(player_index, key)
+    if not settings_value[player_index] then
+        settings_value[player_index] = {}
+        
+        local settings = game.get_player(player_index).mod_settings
+
+        settings_value[player_index]['picker-filter-requests'] = settings['picker-filter-requests'].value
+        settings_value[player_index]['picker-filter-filters'] = settings['picker-filter-filters'].value
+    end
+
+    return settings_value[player_index][key]
+end
+
+local function update_settings_value(event)
+    if event.setting_type == "runtime-per-user" then
+        local settingName = event.setting
+        if settingName == 'picker-filter-requests' or settingName == 'picker-filter-filters' then
+            local player_index = event.player_index
+            local settings = game.get_player(player_index).mod_settings
+            settings_value[player_index][settingName] = settings[settingName].value
+        end
+    end
+end
 
 ---@param event EventData.on_gui_opened
 local function check_for_filterable_inventory(event)
-    local player = game.players[event.player_index]
+    local player_index = event.player_index
+    local player = game.get_player(player_index)
+
+    if not player then return end
+
     local flow = get_or_create_filterfill_gui(player)
 
     local inv = get_opened_inventory(player)
 
-    local settings = player.mod_settings
-    local use_filter_requests = settings['picker-filter-requests'].value
-    local use_filter_filters = settings['picker-filter-filters'].value
+    local use_filter_requests = get_settings_value(player_index, 'picker-filter-requests')
+    local use_filter_filters = get_settings_value(player_index, 'picker-filter-filters')
 
     if inv then
         local requester = false
@@ -313,4 +332,4 @@ local function check_for_filterable_inventory(event)
     end
 end
 Event.register({ defines.events.on_gui_opened, defines.events.on_gui_closed }, check_for_filterable_inventory)
---Event.register(defines.events.on_runtime_mod_setting_changed, update_mod_settings)
+Event.register(defines.events.on_runtime_mod_setting_changed, update_settings_value)
