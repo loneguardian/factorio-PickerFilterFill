@@ -134,14 +134,58 @@ local function get_opened_inventory(player)
     return inv
 end
 
+local setting_names = {
+    ['picker-filter-requests'] = true,
+    ['picker-filter-filters'] = true,
+    ['picker-filter-filters-ignorebar'] = true
+}
+local settings_value = {}
+
+local function get_settings_value(player_index, key)
+    if not settings_value[player_index] then
+        settings_value[player_index] = {}
+        
+        local settings = game.get_player(player_index).mod_settings
+        
+        for k, _ in pairs(setting_names) do
+            settings_value[player_index][k] = settings[k].value
+        end
+    end
+
+    return settings_value[player_index][key]
+end
+
+local function update_settings_value(event)
+    if event.setting_type == "runtime-per-user" then
+        local settingName = event.setting
+        if setting_names[settingName] then
+            local player_index = event.player_index
+            local settings = game.get_player(player_index).mod_settings
+            if not settings_value[player_index] then settings_value[player_index] = {} end
+            settings_value[player_index][settingName] = settings[settingName].value
+        end
+    end
+end
+
+local function get_unbarred_inventory_size(player_index, inv)
+    if not get_settings_value(player_index, 'picker-filter-filters-ignorebar') then return #inv end
+
+    if inv.supports_bar() then
+        return inv.get_bar() - 1
+    else
+        return #inv
+    end
+end
+
 local function filterfill_all(event)
-    local player = game.players[event.player_index]
+    local player_index = event.player_index
+    local player = game.players[player_index]
     local inventory = get_opened_inventory(player)
     if inventory then
         -- Get the contents of the player's cursor stack, or the first cell
         local desired = (player.cursor_stack.valid_for_read and player.cursor_stack.name) or
             Inventory.get_item_or_filter(inventory, 1)
-        for i = 1, #inventory do
+        for i = 1, get_unbarred_inventory_size(player_index, inventory) do
             local current = not event.shift and Inventory.get_item_or_filter(inventory, i)
             inventory.set_filter(i, current or desired or nil)
         end
@@ -151,10 +195,11 @@ Gui.on_click('filterfill_filters_btn_all', filterfill_all)
 
 -- Filtering: Copies the filter settings of each cell to the cell(s) below it
 local function filterfill_down(event)
-    local player = game.players[event.player_index]
+    local player_index = event.player_index
+    local player = game.players[player_index]
     local inventory = get_opened_inventory(player)
     if inventory then
-        local size = #inventory
+        local size = get_unbarred_inventory_size(player_index, inventory)
         local rows = ceil(size / INVENTORY_COLUMNS)
         for c = 1, INVENTORY_COLUMNS do
             local desired = Inventory.get_item_or_filter(inventory, c)
@@ -172,10 +217,11 @@ Gui.on_click('filterfill_filters_btn_down', filterfill_down)
 
 -- Filtering: Copies the filter settings of each cell to the cell(s) to the right of it
 local function filterfill_right(event)
-    local player = game.players[event.player_index]
+    local player_index = event.player_index
+    local player = game.players[player_index]
     local inventory = get_opened_inventory(player)
     if inventory then
-        local size = #inventory
+        local size = get_unbarred_inventory_size(player_index, inventory)
         local rows = ceil(size / INVENTORY_COLUMNS)
         -- local desired
         for r = 1, rows do
@@ -275,32 +321,6 @@ local function blueprint_requests(event)
     end
 end
 Gui.on_click('filterfill_requests_btn_bp', blueprint_requests)
-
-local settings_value = {}
-
-local function get_settings_value(player_index, key)
-    if not settings_value[player_index] then
-        settings_value[player_index] = {}
-        
-        local settings = game.get_player(player_index).mod_settings
-
-        settings_value[player_index]['picker-filter-requests'] = settings['picker-filter-requests'].value
-        settings_value[player_index]['picker-filter-filters'] = settings['picker-filter-filters'].value
-    end
-
-    return settings_value[player_index][key]
-end
-
-local function update_settings_value(event)
-    if event.setting_type == "runtime-per-user" then
-        local settingName = event.setting
-        if settingName == 'picker-filter-requests' or settingName == 'picker-filter-filters' then
-            local player_index = event.player_index
-            local settings = game.get_player(player_index).mod_settings
-            settings_value[player_index][settingName] = settings[settingName].value
-        end
-    end
-end
 
 ---@param event EventData.on_gui_opened
 local function check_for_filterable_inventory(event)

@@ -12,5 +12,12 @@ data:extend {
         setting_type = 'runtime-per-user',
         default_value = true,
         order = 'ac'
+    },
+    {
+        type = 'bool-setting',
+        name = 'picker-filter-filters-ignorebar',
+        setting_type = 'runtime-per-user',
+        default_value = true,
+        order = 'ac'
     }
 }
