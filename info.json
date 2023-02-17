@@ -2,7 +2,7 @@
   "name": "PickerFilterFill",
   "version": "0.0.1",
   "title": "Picker Filter Fill",
-  "author": "Nexela",
+  "author": "Nexela, Xeraph",
   "factorio_version": "1.1",
   "dependencies": [
     "base >= 1.1",
